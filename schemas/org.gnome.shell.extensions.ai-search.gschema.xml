@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="ai-search">
+  <schema id="org.gnome.shell.extensions.ai-search"
+          path="/org/gnome/shell/extensions/ai-search/">
+
+    <!-- General Settings -->
+    <key name="show-indicator" type="b">
+      <default>true</default>
+      <summary>Show panel indicator</summary>
+      <description>
+        Show the AI Search indicator in the top panel
+      </description>
+    </key>
+
+    <!-- AI Provider Settings -->
+    <key name="active-provider" type="s">
+      <default>"anthropic"</default>
+      <summary>Active AI provider</summary>
+      <description>
+        The currently active AI provider (openai, anthropic, gemini, openrouter)
+      </description>
+    </key>
+
+    <!-- API Keys -->
+    <key name="openai-api-key" type="s">
+      <default>""</default>
+      <summary>OpenAI API Key</summary>
+      <description>
+        API key for OpenAI GPT models
+      </description>
+    </key>
+
+    <key name="anthropic-api-key" type="s">
+      <default>""</default>
+      <summary>Anthropic API Key</summary>
+      <description>
+        API key for Anthropic Claude models
+      </description>
+    </key>
+
+    <key name="gemini-api-key" type="s">
+      <default>""</default>
+      <summary>Google Gemini API Key</summary>
+      <description>
+        API key for Google Gemini models
+      </description>
+    </key>
+
+    <key name="openrouter-api-key" type="s">
+      <default>""</default>
+      <summary>OpenRouter API Key</summary>
+      <description>
+        API key for OpenRouter (access to multiple AI models)
+      </description>
+    </key>
+
+    <!-- Model Settings -->
+    <key name="openai-model" type="s">
+      <default>"gpt-4"</default>
+      <summary>OpenAI Model</summary>
+      <description>
+        The OpenAI model to use (gpt-4, gpt-4-turbo, gpt-3.5-turbo, etc.)
+      </description>
+    </key>
+
+    <key name="anthropic-model" type="s">
+      <default>"claude-3-5-sonnet-20241022"</default>
+      <summary>Anthropic Model</summary>
+      <description>
+        The Anthropic Claude model to use
+      </description>
+    </key>
+
+    <key name="gemini-model" type="s">
+      <default>"gemini-1.5-flash"</default>
+      <summary>Gemini Model</summary>
+      <description>
+        The Google Gemini model to use
+      </description>
+    </key>
+
+    <key name="openrouter-model" type="s">
+      <default>"anthropic/claude-3.5-sonnet"</default>
+      <summary>OpenRouter Model</summary>
+      <description>
+        The model to use via OpenRouter
+      </description>
+    </key>
+
+    <!-- Keyboard Shortcuts -->
+    <key name="show-search-overlay" type="as">
+      <default><![CDATA[['<Super>space']]]></default>
+      <summary>Show AI search overlay</summary>
+      <description>
+        Keyboard shortcut to show/hide the AI search overlay
+      </description>
+    </key>
+
+    <key name="screenshot-ai-analyze" type="as">
+      <default><![CDATA[['<Super><Shift>s']]]></default>
+      <summary>Screenshot and AI analyze</summary>
+      <description>
+        Keyboard shortcut to capture a screenshot and analyze with AI
+      </description>
+    </key>
+
+    <!-- Search Provider Settings -->
+    <key name="enable-search-provider" type="b">
+      <default>true</default>
+      <summary>Enable GNOME Search integration</summary>
+      <description>
+        Enable AI-powered results in GNOME Shell search
+      </description>
+    </key>
+
+    <key name="search-trigger-words" type="as">
+      <default><![CDATA[['ai:', 'ask:', 'what', 'how', 'why']]]></default>
+      <summary>Search trigger words</summary>
+      <description>
+        Words that trigger AI search in GNOME Shell search
+      </description>
+    </key>
+
+    <!-- UI Settings -->
+    <key name="overlay-width" type="i">
+      <default>700</default>
+      <summary>Overlay width</summary>
+      <description>
+        Width of the AI search overlay in pixels
+      </description>
+    </key>
+
+    <key name="overlay-height" type="i">
+      <default>600</default>
+      <summary>Overlay height</summary>
+      <description>
+        Height of the AI search overlay in pixels
+      </description>
+    </key>
+
+    <key name="theme-style" type="s">
+      <default>"auto"</default>
+      <summary>Theme style</summary>
+      <description>
+        UI theme style (auto, light, dark, futuristic)
+      </description>
+    </key>
+
+    <!-- Advanced Settings -->
+    <key name="max-tokens" type="i">
+      <default>1024</default>
+      <summary>Maximum tokens</summary>
+      <description>
+        Maximum tokens for AI responses
+      </description>
+    </key>
+
+    <key name="temperature" type="d">
+      <default>0.7</default>
+      <summary>Temperature</summary>
+      <description>
+        AI temperature setting (0.0 to 1.0)
+      </description>
+    </key>
+
+    <key name="save-conversation-history" type="b">
+      <default>true</default>
+      <summary>Save conversation history</summary>
+      <description>
+        Save conversation history locally
+      </description>
+    </key>
+
+    <key name="cleanup-screenshots-hours" type="i">
+      <default>24</default>
+      <summary>Cleanup screenshots after hours</summary>
+      <description>
+        Delete temporary screenshots older than this many hours
+      </description>
+    </key>
+
+  </schema>
+</schemalist>

@@ -1,0 +1,13 @@
+{
+  "uuid": "ai-search@ubuntu.extension",
+  "name": "AI Search - Multimodal Assistant",
+  "description": "Futuristic AI-powered search and assistant with multimodal capabilities. Integrates OpenAI GPT, Anthropic Claude, Google Gemini with advanced screenshot and image processing.",
+  "shell-version": [
+    "45",
+    "46"
+  ],
+  "version": 1,
+  "url": "https://github.com/Feli87/ia-ubuntu",
+  "settings-schema": "org.gnome.shell.extensions.ai-search",
+  "gettext-domain": "ai-search"
+}

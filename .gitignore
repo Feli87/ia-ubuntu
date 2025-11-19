@@ -1,0 +1,37 @@
+# Compiled schemas
+*.gschema.compiled
+gschemas.compiled
+
+# Node modules (if using any build tools)
+node_modules/
+package-lock.json
+
+# Build artifacts
+*.zip
+*.shell-extension.zip
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Local settings (user-specific)
+local-settings.json
+
+# Screenshots for testing
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Distribution files
+dist/
+build/
