@@ -139,6 +139,26 @@ export default class AISearchPreferences extends ExtensionPreferences {
         });
         settings.bind('openai-api-key', openaiKeyRow, 'text',
             Gio.SettingsBindFlags.DEFAULT);
+
+        // Add validation indicator
+        openaiKeyRow.connect('changed', () => {
+            const key = openaiKeyRow.get_text();
+            if (key.length === 0) {
+                openaiKeyRow.remove_css_class('error');
+                openaiKeyRow.remove_css_class('success');
+                return;
+            }
+
+            // Validate OpenAI key format (starts with 'sk-')
+            if (key.startsWith('sk-') && key.length > 20) {
+                openaiKeyRow.remove_css_class('error');
+                openaiKeyRow.add_css_class('success');
+            } else {
+                openaiKeyRow.add_css_class('error');
+                openaiKeyRow.remove_css_class('success');
+            }
+        });
+
         openaiGroup.add(openaiKeyRow);
 
         const openaiModelRow = new Adw.EntryRow({
@@ -175,6 +195,26 @@ export default class AISearchPreferences extends ExtensionPreferences {
         });
         settings.bind('anthropic-api-key', anthropicKeyRow, 'text',
             Gio.SettingsBindFlags.DEFAULT);
+
+        // Add validation for Anthropic API key
+        anthropicKeyRow.connect('changed', () => {
+            const key = anthropicKeyRow.get_text();
+            if (key.length === 0) {
+                anthropicKeyRow.remove_css_class('error');
+                anthropicKeyRow.remove_css_class('success');
+                return;
+            }
+
+            // Validate Anthropic key format (starts with 'sk-ant-')
+            if (key.startsWith('sk-ant-') && key.length > 30) {
+                anthropicKeyRow.remove_css_class('error');
+                anthropicKeyRow.add_css_class('success');
+            } else {
+                anthropicKeyRow.add_css_class('error');
+                anthropicKeyRow.remove_css_class('success');
+            }
+        });
+
         anthropicGroup.add(anthropicKeyRow);
 
         const anthropicModelRow = new Adw.EntryRow({
@@ -210,6 +250,26 @@ export default class AISearchPreferences extends ExtensionPreferences {
         });
         settings.bind('gemini-api-key', geminiKeyRow, 'text',
             Gio.SettingsBindFlags.DEFAULT);
+
+        // Add validation for Gemini API key
+        geminiKeyRow.connect('changed', () => {
+            const key = geminiKeyRow.get_text();
+            if (key.length === 0) {
+                geminiKeyRow.remove_css_class('error');
+                geminiKeyRow.remove_css_class('success');
+                return;
+            }
+
+            // Validate Gemini key format (alphanumeric, typically 39 chars)
+            if (key.length >= 30 && /^[A-Za-z0-9_-]+$/.test(key)) {
+                geminiKeyRow.remove_css_class('error');
+                geminiKeyRow.add_css_class('success');
+            } else {
+                geminiKeyRow.add_css_class('error');
+                geminiKeyRow.remove_css_class('success');
+            }
+        });
+
         geminiGroup.add(geminiKeyRow);
 
         const geminiModelRow = new Adw.EntryRow({
@@ -245,6 +305,26 @@ export default class AISearchPreferences extends ExtensionPreferences {
         });
         settings.bind('openrouter-api-key', openrouterKeyRow, 'text',
             Gio.SettingsBindFlags.DEFAULT);
+
+        // Add validation for OpenRouter API key
+        openrouterKeyRow.connect('changed', () => {
+            const key = openrouterKeyRow.get_text();
+            if (key.length === 0) {
+                openrouterKeyRow.remove_css_class('error');
+                openrouterKeyRow.remove_css_class('success');
+                return;
+            }
+
+            // Validate OpenRouter key format (starts with 'sk-or-')
+            if (key.startsWith('sk-or-') && key.length > 30) {
+                openrouterKeyRow.remove_css_class('error');
+                openrouterKeyRow.add_css_class('success');
+            } else {
+                openrouterKeyRow.add_css_class('error');
+                openrouterKeyRow.remove_css_class('success');
+            }
+        });
+
         openrouterGroup.add(openrouterKeyRow);
 
         const openrouterModelRow = new Adw.EntryRow({
