@@ -8,28 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Advanced error handling with retry logic and exponential backoff
-- Network error detection and user-friendly error messages
-- API key format validation for all providers (OpenAI, Anthropic, Gemini, OpenRouter)
-- Real-time API key validation in preferences UI with visual indicators
-- Custom `AIProviderError` class for better error categorization
-- Timeout handling for API requests (30 seconds default)
-- Retryable vs non-retryable error classification
-- Rate limit detection and automatic retry
-- Server error (500, 502, 503, 504) automatic retry
-- Invalid API key detection (401, 403)
-- Parse error handling for invalid JSON responses
+- **Error Handling & Stability (P0)**
+  - Advanced error handling with retry logic and exponential backoff
+  - Network error detection and user-friendly error messages
+  - API key format validation for all providers (OpenAI, Anthropic, Gemini, OpenRouter)
+  - Real-time API key validation in preferences UI with visual indicators
+  - Custom `AIProviderError` class for better error categorization
+  - Timeout handling for API requests (30 seconds default)
+  - Retryable vs non-retryable error classification
+  - Rate limit detection and automatic retry
+  - Server error (500, 502, 503, 504) automatic retry
+  - Invalid API key detection (401, 403)
+  - Parse error handling for invalid JSON responses
+
+- **Memory Management (P0)**
+  - Conversation history size limits (max 50 messages)
+  - UI message display limits (max 100 messages)
+  - Automatic trimming of old messages to prevent memory bloat
+  - Image attachment size limits (10MB total)
+  - Image size validation before attachment
+  - Size tracking for all attached images
+  - User notifications when limits are exceeded
+  - Automatic cleanup on conversation clear
 
 ### Changed
 - Improved HTTP request handling with detailed error codes
 - Enhanced user experience with descriptive error messages
 - Better cleanup in provider destroy() methods
 - Session timeout configuration
+- Conversation management with automatic memory optimization
+- Image attachment handling with size validation
 
 ### Fixed
 - Potential memory leaks in long-running sessions
 - Network errors not being properly caught
 - Missing error handling for malformed API responses
+- Memory bloat from unlimited conversation history
+- Image attachment accumulation without limits
+- UI slowdown from too many displayed messages
 
 ## [1.0.0] - 2025-11-19
 

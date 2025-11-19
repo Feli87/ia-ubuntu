@@ -22,6 +22,12 @@ export class AIOverlay {
         this._conversation = [];
         this._attachedImages = [];
 
+        // Memory management settings
+        this._maxConversationLength = 50; // Maximum messages to keep
+        this._maxMessagesDisplayed = 100; // Maximum UI messages
+        this._maxAttachedImagesSize = 10 * 1024 * 1024; // 10MB total
+        this._currentImagesSize = 0;
+
         this._createUI();
     }
 
@@ -397,6 +403,9 @@ export class AIOverlay {
                 timestamp: Date.now(),
             });
 
+            // Trim conversation if it's getting too long
+            this._trimConversation();
+
         } catch (error) {
             console.error('[AI Overlay] Query error:', error);
 
@@ -448,10 +457,18 @@ export class AIOverlay {
     }
 
     _attachImage(path) {
+        // Check if we can add this image (size limit)
+        if (!this._canAddImage(path)) {
+            return;
+        }
+
         this._attachedImages.push({
             path: path,
             timestamp: Date.now(),
         });
+
+        // Update total images size
+        this._updateImagesSize();
 
         this._updateImagesPreview();
         this._updateSendButton();
@@ -502,6 +519,7 @@ export class AIOverlay {
 
     _clearAttachedImages() {
         this._attachedImages = [];
+        this._currentImagesSize = 0;
         this._updateImagesPreview();
     }
 
@@ -545,8 +563,97 @@ export class AIOverlay {
     _clearConversation() {
         this._messagesBox.destroy_all_children();
         this._conversation = [];
+        this._clearAttachedImages();
+        this._currentImagesSize = 0;
         this._addWelcomeMessage();
         Main.notify('AI Search', 'Conversation cleared');
+    }
+
+    /**
+     * Trim conversation to max length
+     * Keeps most recent messages within limit
+     * @private
+     */
+    _trimConversation() {
+        if (this._conversation.length > this._maxConversationLength) {
+            const trimCount = this._conversation.length - this._maxConversationLength;
+            console.log(`[AI Overlay] Trimming ${trimCount} old messages from conversation`);
+            this._conversation = this._conversation.slice(trimCount);
+
+            // Also trim UI messages if needed
+            this._trimUIMessages();
+        }
+    }
+
+    /**
+     * Trim UI messages to prevent memory bloat
+     * @private
+     */
+    _trimUIMessages() {
+        const children = this._messagesBox.get_children();
+        if (children.length > this._maxMessagesDisplayed) {
+            const trimCount = children.length - this._maxMessagesDisplayed;
+            console.log(`[AI Overlay] Trimming ${trimCount} old UI messages`);
+
+            for (let i = 0; i < trimCount; i++) {
+                // Keep welcome message (first child)
+                if (children[i + 1]) {
+                    children[i + 1].destroy();
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if adding an image would exceed size limit
+     * @private
+     */
+    _canAddImage(imagePath) {
+        try {
+            const file = Gio.File.new_for_path(imagePath);
+            const info = file.query_info(
+                'standard::size',
+                Gio.FileQueryInfoFlags.NONE,
+                null
+            );
+            const fileSize = info.get_size();
+
+            if (this._currentImagesSize + fileSize > this._maxAttachedImagesSize) {
+                console.warn(`[AI Overlay] Image size limit exceeded: ${fileSize} bytes`);
+                Main.notify(
+                    'AI Search',
+                    'Image size limit exceeded. Please remove some images first.'
+                );
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[AI Overlay] Error checking image size:', error);
+            return true; // Allow on error
+        }
+    }
+
+    /**
+     * Update current images size tracking
+     * @private
+     */
+    _updateImagesSize() {
+        this._currentImagesSize = 0;
+
+        for (const image of this._attachedImages) {
+            try {
+                const file = Gio.File.new_for_path(image.path);
+                const info = file.query_info(
+                    'standard::size',
+                    Gio.FileQueryInfoFlags.NONE,
+                    null
+                );
+                this._currentImagesSize += info.get_size();
+            } catch (error) {
+                console.error('[AI Overlay] Error updating image size:', error);
+            }
+        }
     }
 
     _getProviderName() {
