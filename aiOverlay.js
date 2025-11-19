@@ -364,36 +364,67 @@ export class AIOverlay {
 
         // Clear input
         this._entry.set_text('');
+        const attachedImages = [...this._attachedImages];
         this._clearAttachedImages();
 
         // Show loading
         const loadingWidget = this._addLoadingMessage();
 
         try {
-            // Get AI response
             let response;
-            if (this._attachedImages.length > 0) {
-                // Multimodal query
+
+            // Check if we should use streaming
+            const useStreaming = this._aiManager.isStreamingEnabled() &&
+                                 this._aiManager.supportsStreaming() &&
+                                 attachedImages.length === 0; // No streaming for multimodal yet
+
+            if (attachedImages.length > 0) {
+                // Multimodal query (no streaming support yet)
                 const images = await Promise.all(
-                    this._attachedImages.map(img => this._imageToBase64(img.path))
+                    attachedImages.map(img => this._imageToBase64(img.path))
                 );
                 response = await this._aiManager.queryMultimodal(text || 'What is in this image?', images);
+
+                // Remove loading and show response
+                this._removeLoadingMessage(loadingWidget);
+                this._addAssistantMessage(response.text);
+
+            } else if (useStreaming) {
+                // Streaming text query
+                console.log('[AI Overlay] Using streaming mode');
+
+                // Remove loading indicator
+                this._removeLoadingMessage(loadingWidget);
+
+                // Add empty assistant message that we'll update
+                const messageLabel = this._addAssistantMessage('');
+                let streamedText = '';
+
+                // Stream the response
+                response = await this._aiManager.queryStream(
+                    text,
+                    (chunk) => {
+                        // Update message in real-time
+                        streamedText += chunk;
+                        messageLabel.set_text(streamedText);
+                        this._scrollToBottom();
+                    }
+                );
+
             } else {
-                // Text-only query
+                // Regular text query (no streaming)
                 response = await this._aiManager.query(text);
+
+                // Remove loading and show response
+                this._removeLoadingMessage(loadingWidget);
+                this._addAssistantMessage(response.text);
             }
-
-            // Remove loading
-            this._removeLoadingMessage(loadingWidget);
-
-            // Add response
-            this._addAssistantMessage(response.text);
 
             // Store in conversation
             this._conversation.push({
                 role: 'user',
                 content: text,
-                images: this._attachedImages,
+                images: attachedImages,
                 timestamp: Date.now(),
             });
 

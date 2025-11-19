@@ -31,6 +31,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - User notifications when limits are exceeded
   - Automatic cleanup on conversation clear
 
+- **Streaming Responses (P1)**
+  - Real-time streaming of AI responses as they are generated
+  - Server-Sent Events (SSE) parsing for OpenAI
+  - Server-Sent Events (SSE) parsing for Anthropic
+  - Live UI updates as tokens arrive
+  - Streaming toggle in settings (enabled by default)
+  - Automatic fallback to non-streaming for unsupported providers
+  - Graceful degradation for multimodal queries
+  - Provider capability detection (supportsStreaming)
+  - Smooth text animation in chat interface
+  - Instant feedback to user queries
+
 ### Changed
 - Improved HTTP request handling with detailed error codes
 - Enhanced user experience with descriptive error messages

@@ -147,6 +147,14 @@
     </key>
 
     <!-- Advanced Settings -->
+    <key name="enable-streaming" type="b">
+      <default>true</default>
+      <summary>Enable streaming responses</summary>
+      <description>
+        Enable real-time streaming of AI responses for supported providers
+      </description>
+    </key>
+
     <key name="max-tokens" type="i">
       <default>1024</default>
       <summary>Maximum tokens</summary>

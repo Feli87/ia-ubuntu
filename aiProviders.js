@@ -329,6 +329,7 @@ class OpenAIProvider extends AIProvider {
                 ],
                 max_tokens: options.maxTokens || 1000,
                 temperature: options.temperature || 0.7,
+                stream: false,
             }
         );
 
@@ -337,6 +338,150 @@ class OpenAIProvider extends AIProvider {
             provider: 'openai',
             model: response.model,
         };
+    }
+
+    /**
+     * Query with streaming support
+     * @param {string} prompt - The user prompt
+     * @param {Function} onChunk - Callback for each chunk (text) => void
+     * @param {Object} options - Query options
+     * @returns {Promise<Object>} Final response object
+     */
+    async queryStream(prompt, onChunk, options = {}) {
+        const url = `${this.baseUrl}/chat/completions`;
+        const requestBody = {
+            model: options.model || this.model,
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+            max_tokens: options.maxTokens || 1000,
+            temperature: options.temperature || 0.7,
+            stream: true,
+        };
+
+        let fullText = '';
+        let model = '';
+
+        try {
+            const chunks = await this._makeStreamRequest(
+                url,
+                'POST',
+                {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`,
+                },
+                requestBody
+            );
+
+            for await (const chunk of chunks) {
+                if (chunk.choices && chunk.choices[0]) {
+                    const delta = chunk.choices[0].delta;
+                    if (delta && delta.content) {
+                        const text = delta.content;
+                        fullText += text;
+                        if (onChunk) {
+                            onChunk(text);
+                        }
+                    }
+                }
+
+                if (chunk.model) {
+                    model = chunk.model;
+                }
+
+                // Check for finish
+                if (chunk.choices && chunk.choices[0].finish_reason) {
+                    break;
+                }
+            }
+
+            return {
+                text: fullText,
+                provider: 'openai',
+                model: model || this.model,
+            };
+
+        } catch (error) {
+            console.error('[OpenAI] Stream error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Make streaming HTTP request
+     * @private
+     */
+    async *_makeStreamRequest(url, method, headers, body) {
+        const message = new Soup.Message({
+            method: method,
+            uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
+        });
+
+        // Set headers
+        for (const [key, value] of Object.entries(headers)) {
+            message.request_headers.append(key, value);
+        }
+
+        // Set body
+        const bodyStr = JSON.stringify(body);
+        message.set_request_body_from_bytes(
+            'application/json',
+            new GLib.Bytes(bodyStr)
+        );
+
+        // Send request and get input stream
+        const inputStream = await this.session.send_async(
+            message,
+            GLib.PRIORITY_DEFAULT,
+            null
+        );
+
+        const dataInputStream = Gio.DataInputStream.new(inputStream);
+        let buffer = '';
+
+        try {
+            while (true) {
+                // Read line by line
+                const [line] = await dataInputStream.read_line_async(
+                    GLib.PRIORITY_DEFAULT,
+                    null
+                );
+
+                if (!line) {
+                    break; // End of stream
+                }
+
+                const lineStr = new TextDecoder('utf-8').decode(line);
+
+                // Skip empty lines and comments
+                if (!lineStr.trim() || lineStr.startsWith(':')) {
+                    continue;
+                }
+
+                // SSE format: "data: {...}"
+                if (lineStr.startsWith('data: ')) {
+                    const data = lineStr.substring(6).trim();
+
+                    // Check for [DONE] marker
+                    if (data === '[DONE]') {
+                        break;
+                    }
+
+                    try {
+                        const chunk = JSON.parse(data);
+                        yield chunk;
+                    } catch (parseError) {
+                        console.warn('[OpenAI] Failed to parse chunk:', data);
+                    }
+                }
+            }
+        } finally {
+            dataInputStream.close(null);
+            inputStream.close(null);
+        }
     }
 
     async queryMultimodal(prompt, images, options = {}) {
@@ -424,6 +569,7 @@ class AnthropicProvider extends AIProvider {
                     },
                 ],
                 max_tokens: options.maxTokens || 1024,
+                stream: false,
             }
         );
 
@@ -432,6 +578,143 @@ class AnthropicProvider extends AIProvider {
             provider: 'anthropic',
             model: response.model,
         };
+    }
+
+    /**
+     * Query with streaming support (Anthropic format)
+     * @param {string} prompt - The user prompt
+     * @param {Function} onChunk - Callback for each chunk (text) => void
+     * @param {Object} options - Query options
+     * @returns {Promise<Object>} Final response object
+     */
+    async queryStream(prompt, onChunk, options = {}) {
+        const url = `${this.baseUrl}/messages`;
+        const requestBody = {
+            model: options.model || this.model,
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt,
+                },
+            ],
+            max_tokens: options.maxTokens || 1024,
+            stream: true,
+        };
+
+        let fullText = '';
+        let model = '';
+
+        try {
+            const chunks = await this._makeStreamRequestAnthropic(
+                url,
+                'POST',
+                {
+                    'Content-Type': 'application/json',
+                    'x-api-key': this.apiKey,
+                    'anthropic-version': '2023-06-01',
+                },
+                requestBody
+            );
+
+            for await (const chunk of chunks) {
+                // Anthropic streaming format
+                if (chunk.type === 'content_block_delta') {
+                    if (chunk.delta && chunk.delta.text) {
+                        const text = chunk.delta.text;
+                        fullText += text;
+                        if (onChunk) {
+                            onChunk(text);
+                        }
+                    }
+                } else if (chunk.type === 'message_start') {
+                    if (chunk.message && chunk.message.model) {
+                        model = chunk.message.model;
+                    }
+                } else if (chunk.type === 'message_delta') {
+                    // Message metadata updates
+                    continue;
+                } else if (chunk.type === 'message_stop') {
+                    break;
+                }
+            }
+
+            return {
+                text: fullText,
+                provider: 'anthropic',
+                model: model || this.model,
+            };
+
+        } catch (error) {
+            console.error('[Anthropic] Stream error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Make streaming HTTP request for Anthropic
+     * @private
+     */
+    async *_makeStreamRequestAnthropic(url, method, headers, body) {
+        const message = new Soup.Message({
+            method: method,
+            uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
+        });
+
+        // Set headers
+        for (const [key, value] of Object.entries(headers)) {
+            message.request_headers.append(key, value);
+        }
+
+        // Set body
+        const bodyStr = JSON.stringify(body);
+        message.set_request_body_from_bytes(
+            'application/json',
+            new GLib.Bytes(bodyStr)
+        );
+
+        // Send request and get input stream
+        const inputStream = await this.session.send_async(
+            message,
+            GLib.PRIORITY_DEFAULT,
+            null
+        );
+
+        const dataInputStream = Gio.DataInputStream.new(inputStream);
+
+        try {
+            while (true) {
+                const [line] = await dataInputStream.read_line_async(
+                    GLib.PRIORITY_DEFAULT,
+                    null
+                );
+
+                if (!line) {
+                    break;
+                }
+
+                const lineStr = new TextDecoder('utf-8').decode(line);
+
+                // Skip empty lines
+                if (!lineStr.trim()) {
+                    continue;
+                }
+
+                // Anthropic SSE format: "event: ...\ndata: {...}"
+                if (lineStr.startsWith('data: ')) {
+                    const data = lineStr.substring(6).trim();
+
+                    try {
+                        const chunk = JSON.parse(data);
+                        yield chunk;
+                    } catch (parseError) {
+                        console.warn('[Anthropic] Failed to parse chunk:', data);
+                    }
+                }
+            }
+        } finally {
+            dataInputStream.close(null);
+            inputStream.close(null);
+        }
     }
 
     async queryMultimodal(prompt, images, options = {}) {
@@ -739,6 +1022,49 @@ export class AIProviderManager {
     async queryMultimodal(prompt, images, options = {}) {
         const provider = this.getActiveProvider();
         return provider.queryMultimodal(prompt, images, options);
+    }
+
+    /**
+     * Send streaming query to active provider
+     * @param {string} prompt - The user prompt
+     * @param {Function} onChunk - Callback for each chunk
+     * @param {Object} options - Query options
+     * @returns {Promise<Object>} Final response
+     */
+    async queryStream(prompt, onChunk, options = {}) {
+        const provider = this.getActiveProvider();
+
+        // Check if provider supports streaming
+        if (typeof provider.queryStream !== 'function') {
+            console.warn(`[AI Manager] Provider does not support streaming, falling back to regular query`);
+            const response = await provider.query(prompt, options);
+            // Simulate streaming by calling onChunk with full text
+            if (onChunk) {
+                onChunk(response.text);
+            }
+            return response;
+        }
+
+        return provider.queryStream(prompt, onChunk, options);
+    }
+
+    /**
+     * Check if active provider supports streaming
+     */
+    supportsStreaming() {
+        try {
+            const provider = this.getActiveProvider();
+            return typeof provider.queryStream === 'function';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if streaming is enabled in settings
+     */
+    isStreamingEnabled() {
+        return this._extension._settings.get_boolean('enable-streaming');
     }
 
     destroy() {

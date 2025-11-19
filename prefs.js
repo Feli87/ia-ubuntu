@@ -361,6 +361,15 @@ export default class AISearchPreferences extends ExtensionPreferences {
         });
         advancedPage.add(aiSettingsGroup);
 
+        // Enable streaming
+        const enableStreamingRow = new Adw.SwitchRow({
+            title: 'Enable Streaming Responses',
+            subtitle: 'Show AI responses in real-time as they are generated (OpenAI & Anthropic)',
+        });
+        settings.bind('enable-streaming', enableStreamingRow, 'active',
+            Gio.SettingsBindFlags.DEFAULT);
+        aiSettingsGroup.add(enableStreamingRow);
+
         // Max tokens
         const maxTokensRow = new Adw.SpinRow({
             title: 'Maximum Tokens',
